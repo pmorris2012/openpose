@@ -1,0 +1,21 @@
+# Common
+README.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+docker-compose.yml
+docker-compose.test.yml
+LICENSE
+Dockerfile
+
+# git
+.git
+.gitattributes
+.gitignore
+.github/
+
+# Misc
+docs/
+.DS_Store
+.project
+.pydevproject
