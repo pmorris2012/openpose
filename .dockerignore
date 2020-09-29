@@ -9,10 +9,10 @@ LICENSE
 Dockerfile
 
 # git
-.git
-.gitattributes
-.gitignore
-.github/
+# .git
+# .gitattributes
+# .gitignore
+# .github/
 
 # Misc
 docs/
