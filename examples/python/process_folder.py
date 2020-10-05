@@ -7,6 +7,8 @@ import argparse
 from tqdm import tqdm
 
 from drawing import draw_keypoints
+from file_utils import move_path, replace_ext, create_dirs
+from cv_tuils import find_images_videos, get_video_properties
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_folder', default="/Videos")
@@ -63,19 +65,6 @@ def draw_pose(image, result, modes):
         image = draw_keypoints(image, mode=mode)
     return image
 
-def move_path(path, folder_from, folder_to):
-    return path.replace(folder_from, folder_to, 1)
-
-def replace_ext(file, ext):
-    if not ext.startswith('.'):
-        ext = '.' + ext
-    return os.path.splitext(file)[0] + ext
-
-def create_dirs(path):
-    directory = os.path.dirname(path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
 def save_coords(path, result, modes):
     arrays = {}
     for mode in modes:
@@ -84,25 +73,6 @@ def save_coords(path, result, modes):
             arrays[mode] = array
     
     np.savez(path, **arrays)
-
-def check_video(file):
-    video = cv2.VideoCapture(file)
-    frames_remaining, frame = video.read()
-    return frames_remaining
-
-def check_image(file):
-    return cv2.haveImageReader(file)
-
-def find_images_videos(directory, files):
-    images, videos = [], []
-    for file in files:
-        file_path = os.path.join(directory, file)
-        if check_image(file_path):
-            images.append(file_path)
-        elif check_video(file_path):
-            videos.append(file_path)
-
-    return images, videos
 
 #os.walk recursively goes through all the files in our args.input_folder
 for directory, folders, files in os.walk(args.input_folder):
@@ -121,17 +91,9 @@ for directory, folders, files in os.walk(args.input_folder):
 def process_image(image_path):
     pass
 
-def get_properties(video):
-    return {
-        'fps': video.get(cv2.CAP_PROP_FPS),
-        'width': int(video.get(cv2.CAP_PROP_FRAME_WIDTH)),
-        'height': int(video.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-        'frames': int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    }
-
 def process_video(video_path):
     video = cv2.VideoCapture(video_path)
-    props = get_properties(video)
+    props = get_video_properties(video)
 
     if args.draw_pose:
         pose_path = move_path(video_path, args.input_folder, pose_dir)
