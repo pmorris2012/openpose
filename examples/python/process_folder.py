@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from drawing import draw_keypoints
 from file_utils import create_write_dir
-from cv_tuils import find_images_videos, get_video_properties
+from cv_utils import find_images_videos, get_video_properties
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_folder', default="/Videos")
@@ -81,7 +81,24 @@ def rescale_coords(result, modes, frame_size):
     return arrays
 
 def process_image(image_path):
-    pass
+    frame = cv2.imread(image_path)
+    frame_size = (frame.shape[1], frame.shape[0])
+    
+    result = get_keypoints(image)
+
+    if args.draw_pose:
+        image_pose = draw_pose(frame, result, modes)
+        pose_path = create_write_dir(image_path, pose_dir, ext=args.image_ext)
+        cv2.imwrite(pose_path, image_pose)
+    if args.draw_black_pose:
+        black = np.zeros_like(frame) #get black image
+        black_pose = draw_pose(black, result, modes)
+        black_pose_path = create_write_dir(image_path, black_pose_dir, ext=args.image_ext)
+        cv2.imwrite(black_pose_path, black_pose)
+
+    coords_path = create_write_dir(image_path, coords_dir, ext='.npz')
+    coord_arrays = rescale_coords(result, modes)
+    np.savez(coords_path, **coord_arrays)
 
 def process_video(video_path):
     video = cv2.VideoCapture(video_path)
