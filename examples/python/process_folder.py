@@ -23,23 +23,6 @@ pose_dir = os.path.join(args.output_folder, "Pose")
 black_pose_dir = os.path.join(args.output_folder, "Black_Pose")
 coords_dir = os.path.join(args.output_folder, "Coords")
 
-def check_video(file):
-    video = cv2.VideoCapture(file)
-    frames_remaining, frame = video.read()
-    return frames_remaining
-
-def check_image(file):
-    return cv2.haveImageReader(file)
-
-#os.walk recursively goes through all the files in our args.input_folder
-input_paths = []
-for directory, folders, files in os.walk(args.input_folder):
-    images
-    for file in files:
-        input_paths.append(os.path.join(directory, file))
-
-print("found", len(input_paths), "input files")
-
 # Custom Params (refer to include/openpose/flags.hpp for more parameters)
 params = dict()
 params["model_folder"] = "/openpose/models/"
@@ -93,13 +76,32 @@ def create_dirs(path):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def save_coords(path, result):
-    pose = np.empty(shape=(0,25,3)) if array_empty(result.poseKeypoints) else result.poseKeypoints
-    face = np.empty(shape=(0,70,3)) if array_empty(result.faceKeypoints) else result.faceKeypoints
-    handl = np.empty(shape=(0,21,3)) if array_empty(result.handKeypoints[0]) else result.handKeypoints[0]
-    handr = np.empty(shape=(0,21,3)) if array_empty(result.handKeypoints[1]) else result.handKeypoints[1]
+def save_coords(path, result, modes):
+    arrays = {}
+    for mode in modes:
+        array = array_dict[mode](result)
+        if len(array.shape) > 0:
+            arrays[mode] = array
     
-    np.savez(path, pose=pose, face=face, handl=handl, handr=handr)
+    np.savez(path, **arrays)
+
+def check_video(file):
+    video = cv2.VideoCapture(file)
+    frames_remaining, frame = video.read()
+    return frames_remaining
+
+def check_image(file):
+    return cv2.haveImageReader(file)
+
+#os.walk recursively goes through all the files in our args.input_folder
+for directory, folders, files in os.walk(args.input_folder):
+    images, videos = [], []
+    for file in files:
+        file_path = os.path.join(directory, file)
+        if check_image(file_path):
+            images.append(file_path)
+        elif check_video(file_path):
+            videos.append(file_path)
 
 for input_path in input_paths:
     video = cv2.VideoCapture(input_path)
