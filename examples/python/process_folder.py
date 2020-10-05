@@ -12,20 +12,33 @@ parser.add_argument('--input_folder', default="/Videos")
 parser.add_argument('--output_folder', default="/Videos_Pose")
 parser.add_argument('--face', dest='face', action='store_true')
 parser.add_argument('--hand', dest='hand', action='store_true')
+parser.add_argument('--draw_pose', dest='draw_pose', action='store_true')
+parser.add_argument('--draw_black_pose', dest='draw_black_pose', action='store_true')
+parser.add_argument('--image_ext', default=".png")
+parser.add_argument('--video_ext', default=".mp4")
+parser.add_argument('--fourcc_code', default="H264")
 args = parser.parse_args()
 
 pose_dir = os.path.join(args.output_folder, "Pose")
 black_pose_dir = os.path.join(args.output_folder, "Black_Pose")
 coords_dir = os.path.join(args.output_folder, "Coords")
 
+def check_video(file):
+    video = cv2.VideoCapture(file)
+    frames_remaining, frame = video.read()
+    return frames_remaining
+
+def check_image(file):
+    return cv2.haveImageReader(file)
+
 #os.walk recursively goes through all the files in our args.input_folder
 input_paths = []
 for directory, folders, files in os.walk(args.input_folder):
+    images
     for file in files:
         input_paths.append(os.path.join(directory, file))
 
 print("found", len(input_paths), "input files")
-print("example:", input_paths[0])
 
 # Custom Params (refer to include/openpose/flags.hpp for more parameters)
 params = dict()
@@ -98,11 +111,11 @@ for input_path in input_paths:
     
     pose_path = move_path(input_path, args.input_folder, pose_dir)
     create_dirs(pose_path)
-    video_pose = cv2.VideoWriter(pose_path, cv2.VideoWriter_fourcc(*'MPEG'), framerate, (width, height))
+    video_pose = cv2.VideoWriter(pose_path, cv2.VideoWriter_fourcc(*args.fourcc_code), framerate, (width, height))
     
     black_pose_path = move_path(input_path, args.input_folder, black_pose_dir)
     create_dirs(black_pose_path)
-    video_black_pose = cv2.VideoWriter(black_pose_path, cv2.VideoWriter_fourcc(*'MPEG'), framerate, (width, height))
+    video_black_pose = cv2.VideoWriter(black_pose_path, cv2.VideoWriter_fourcc(*args.fourcc_code), framerate, (width, height))
     
     coords_path = move_path(input_path, args.input_folder, coords_dir)
     coords_path, _ext = os.path.splitext(coords_path)
