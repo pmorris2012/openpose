@@ -4,6 +4,7 @@ import os
 import pyopenpose as op
 import numpy as np
 import argparse
+from tqdm import tqdm
 
 from drawing import draw_keypoints
 
@@ -35,7 +36,7 @@ opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
 
-def process_image(image):
+def get_keypoints(image):
     datum = op.Datum()
     datum.cvInputData = image
     opWrapper.emplaceAndPop([datum])
@@ -93,8 +94,7 @@ def check_video(file):
 def check_image(file):
     return cv2.haveImageReader(file)
 
-#os.walk recursively goes through all the files in our args.input_folder
-for directory, folders, files in os.walk(args.input_folder):
+def find_images_videos(directory, files):
     images, videos = [], []
     for file in files:
         file_path = os.path.join(directory, file)
@@ -102,6 +102,24 @@ for directory, folders, files in os.walk(args.input_folder):
             images.append(file_path)
         elif check_video(file_path):
             videos.append(file_path)
+
+    return images, videos
+
+#os.walk recursively goes through all the files in our args.input_folder
+for directory, folders, files in os.walk(args.input_folder):
+    print(F"searching {directory}")
+    image_paths, video_paths = find_images_videos(directory, files)
+    print(F"found {len(image_paths)} images and {len(video_paths)} videos")
+    
+    if len(image_paths) > 0:
+        for image_path in tqdm(image_paths, desc='images'):
+            process_image(image_path)
+
+    if len(video_paths) > 0:
+        for video_path in tqdm(video_paths, desc='videos'):
+            process_video(video_path)
+
+
 
 for input_path in input_paths:
     video = cv2.VideoCapture(input_path)
@@ -126,7 +144,7 @@ for input_path in input_paths:
     frames_remaining, frame = video.read()
     frame_idx = 0
     while frames_remaining:
-        result = process_image(frame)
+        result = get_keypoints(frame)
 
         image_pose = draw_pose(frame, result)
         video_pose.write(image_pose)
