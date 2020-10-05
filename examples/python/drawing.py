@@ -63,6 +63,9 @@ def draw_line(image, x1, y1, x2, y2, color):
     cv2.line(image, (x1, y1), (x2, y2), color, thickness)
 
 def draw_keypoints(image, keypoints, mode="body"):
+    if len(keypoints.shape) == 0:
+        return image
+
     for human in keypoints:
         for i, keypoint in enumerate(human):
             if not is_empty(keypoint):
@@ -83,3 +86,4 @@ def draw_keypoints(image, keypoints, mode="body"):
                 draw_line(image, x0_int, y0_int, x1_int, y1_int, line_color)
 
     return image
+
