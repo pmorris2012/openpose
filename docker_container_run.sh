@@ -10,4 +10,4 @@ docker run \
     --ipc="host" \
     pmorris2012/openpose \
     python3 /home/mpcrpaul/Documents/school/openpose/examples/python/process_folder.py \
-    --draw_pose --draw_black_pose --face --hand
+    --draw_pose --draw_black_pose --scale_number 4

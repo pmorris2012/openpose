@@ -19,6 +19,11 @@ parser.add_argument('--draw_pose', dest='draw_pose', action='store_true')
 parser.add_argument('--draw_black_pose', dest='draw_black_pose', action='store_true')
 parser.add_argument('--image_ext', default=".png")
 parser.add_argument('--video_ext', default=".avi")
+parser.add_argument('--net_resolution', default="-1x368")
+parser.add_argument('--scale_number', type=int, default=1)
+parser.add_argument('--scale_gap', type=float, default=0.25)
+parser.add_argument('--hand_scale_number', type=int, default=1)
+parser.add_argument('--hand_scale_range', type=float, default=0.4)
 parser.add_argument('--fourcc_code', default="XVID")
 args = parser.parse_args()
 
@@ -33,6 +38,12 @@ params = dict()
 params["model_folder"] = "/openpose/models/"
 params["face"] = args.face
 params["hand"] = args.hand
+params["hand_scale_number"] = args.hand_scale_number
+params["hand_scale_range"] = args.hand_scale_range
+params["net_resolution"] = args.net_resolution
+params["scale_number"] = args.scale_number
+params["scale_gap"] = args.scale_gap
+params["display"] = 0
 params["render_pose"] = 0 #we will manually draw pose, so we turn this off
 
 # Starting OpenPose
