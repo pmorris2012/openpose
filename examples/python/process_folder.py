@@ -11,8 +11,8 @@ from file_utils import create_write_dir
 from cv_utils import find_images_videos, get_video_properties
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--input_folder', default="/Videos")
-parser.add_argument('--output_folder', default="/Videos_Pose")
+parser.add_argument('--input_folder', default="/Input")
+parser.add_argument('--output_folder', default="/Output")
 parser.add_argument('--face', dest='face', action='store_true')
 parser.add_argument('--hand', dest='hand', action='store_true')
 parser.add_argument('--draw_pose', dest='draw_pose', action='store_true')
@@ -84,7 +84,7 @@ def process_image(image_path):
     frame = cv2.imread(image_path)
     frame_size = (frame.shape[1], frame.shape[0])
     
-    result = get_keypoints(image)
+    result = get_keypoints(frame)
 
     if args.draw_pose:
         image_pose = draw_pose(frame, result, modes)
@@ -110,7 +110,7 @@ def process_video(video_path):
         video_pose = cv2.VideoWriter(pose_path, FOURCC_CODE, props['fps'], frame_size)
     if args.draw_black_pose:
         black_pose_path = create_write_dir(video_path, args.input_folder, black_pose_dir, ext=args.video_ext)
-        video_black_pose = video_pose = cv2.VideoWriter(black_pose_path, FOURCC_CODE, props['fps'], frame_size)
+        video_black_pose = cv2.VideoWriter(black_pose_path, FOURCC_CODE, props['fps'], frame_size)
         
     coords_path = create_write_dir(video_path, args.input_folder, coords_dir, ext='/')
     
@@ -150,9 +150,9 @@ for directory, folders, files in os.walk(args.input_folder):
     print(F"found {len(image_paths)} images and {len(video_paths)} videos")
     
     if len(image_paths) > 0:
-        for image_path in tqdm(image_paths, desc=F'{directory} images', unit='image', dynamic_ncols=True):
+        for image_path in tqdm(image_paths, desc=F'folder:{directory} images', unit='image', dynamic_ncols=True):
             process_image(image_path)
 
     if len(video_paths) > 0:
-        for video_path in tqdm(video_paths, desc=F'{directory} videos', unit='video', dynamic_ncols=True):
+        for video_path in tqdm(video_paths, desc=F'folder:{directory} videos', unit='video', dynamic_ncols=True):
             process_video(video_path)
