@@ -1,3 +1,4 @@
+import os
 import cv2
 
 def check_video(file):

@@ -11,8 +11,8 @@ def create_dirs(path):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def create_write_dir(path, base_dir, ext):
-    write_path = move_path(path, args.input_folder, base_dir)
+def create_write_dir(path, from_dir, to_dir, ext):
+    write_path = move_path(path, from_dir, to_dir)
     write_path = replace_ext(write_path, ext)
     create_dirs(write_path)
     return write_path

@@ -18,8 +18,8 @@ parser.add_argument('--hand', dest='hand', action='store_true')
 parser.add_argument('--draw_pose', dest='draw_pose', action='store_true')
 parser.add_argument('--draw_black_pose', dest='draw_black_pose', action='store_true')
 parser.add_argument('--image_ext', default=".png")
-parser.add_argument('--video_ext', default=".mp4")
-parser.add_argument('--fourcc_code', default="H264")
+parser.add_argument('--video_ext', default=".avi")
+parser.add_argument('--fourcc_code', default="XVID")
 args = parser.parse_args()
 
 FOURCC_CODE = cv2.VideoWriter_fourcc(*args.fourcc_code)
@@ -53,7 +53,7 @@ array_dict = {
     "handr": lambda result: result.handKeypoints[1]
 }
 
-def get_keypoints(opWrapper, image):
+def get_keypoints(image):
     datum = op.Datum()
     datum.cvInputData = image
     opWrapper.emplaceAndPop([datum])
@@ -62,7 +62,7 @@ def get_keypoints(opWrapper, image):
 def draw_pose(image, result, modes):
     for mode in modes:
         array = array_dict[mode](result)
-        image = draw_keypoints(image, mode=mode)
+        image = draw_keypoints(image, array, mode=mode)
     return image
 
 def rescale_coord_array(array, frame_size):
@@ -88,16 +88,16 @@ def process_image(image_path):
 
     if args.draw_pose:
         image_pose = draw_pose(frame, result, modes)
-        pose_path = create_write_dir(image_path, pose_dir, ext=args.image_ext)
+        pose_path = create_write_dir(image_path, args.input_folder, pose_dir, ext=args.image_ext)
         cv2.imwrite(pose_path, image_pose)
     if args.draw_black_pose:
         black = np.zeros_like(frame) #get black image
         black_pose = draw_pose(black, result, modes)
-        black_pose_path = create_write_dir(image_path, black_pose_dir, ext=args.image_ext)
+        black_pose_path = create_write_dir(image_path, args.input_folder, black_pose_dir, ext=args.image_ext)
         cv2.imwrite(black_pose_path, black_pose)
 
-    coords_path = create_write_dir(image_path, coords_dir, ext='.npz')
-    coord_arrays = rescale_coords(result, modes)
+    coords_path = create_write_dir(image_path, args.input_folder, coords_dir, ext='.npz')
+    coord_arrays = rescale_coords(result, modes, frame_size)
     np.savez(coords_path, **coord_arrays)
 
 def process_video(video_path):
@@ -106,15 +106,15 @@ def process_video(video_path):
     frame_size = (props['width'], props['height'])
 
     if args.draw_pose:
-        pose_path = create_write_dir(video_path, pose_dir, ext=args.video_ext)
+        pose_path = create_write_dir(video_path, args.input_folder, pose_dir, ext=args.video_ext)
         video_pose = cv2.VideoWriter(pose_path, FOURCC_CODE, props['fps'], frame_size)
     if args.draw_black_pose:
-        black_pose_path = create_write_dir(video_path, black_pose_dir, ext=args.video_ext)
+        black_pose_path = create_write_dir(video_path, args.input_folder, black_pose_dir, ext=args.video_ext)
         video_black_pose = video_pose = cv2.VideoWriter(black_pose_path, FOURCC_CODE, props['fps'], frame_size)
         
-    coords_path = create_write_dir(video_path, coords_dir, ext='/')
+    coords_path = create_write_dir(video_path, args.input_folder, coords_dir, ext='/')
     
-    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path)[:15])
+    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path), unit='frame', dynamic_ncols=True)
     frames_remaining, frame = video.read()
     frame_idx = 0
     while frames_remaining:
@@ -129,7 +129,7 @@ def process_video(video_path):
             video_black_pose.write(black_pose)
 
         coords_frame_path = os.path.join(coords_path, str(frame_idx) + ".npz")
-        coord_arrays = rescale_coords(result, modes)
+        coord_arrays = rescale_coords(result, modes, frame_size)
         np.savez(coords_frame_path, **coord_arrays)
 
         frames_remaining, frame = video.read()
@@ -150,9 +150,9 @@ for directory, folders, files in os.walk(args.input_folder):
     print(F"found {len(image_paths)} images and {len(video_paths)} videos")
     
     if len(image_paths) > 0:
-        for image_path in tqdm(image_paths, desc='images'):
+        for image_path in tqdm(image_paths, desc=F'{directory} images', unit='image', dynamic_ncols=True):
             process_image(image_path)
 
     if len(video_paths) > 0:
-        for video_path in tqdm(video_paths, desc='videos'):
+        for video_path in tqdm(video_paths, desc=F'{directory} videos', unit='video', dynamic_ncols=True):
             process_video(video_path)
