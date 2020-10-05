@@ -20,6 +20,8 @@ parser.add_argument('--video_ext', default=".mp4")
 parser.add_argument('--fourcc_code', default="H264")
 args = parser.parse_args()
 
+FOURCC_CODE = cv2.VideoWriter_fourcc(*args.fourcc_code)
+
 pose_dir = os.path.join(args.output_folder, "Pose")
 black_pose_dir = os.path.join(args.output_folder, "Black_Pose")
 coords_dir = os.path.join(args.output_folder, "Coords")
@@ -61,16 +63,13 @@ def draw_pose(image, result, modes):
         image = draw_keypoints(image, mode=mode)
     return image
 
-# '\r' is a "carriage return"
-# it moves the cursor back to the biginning of the line
-# the next line will then overwrite the previus one
-def log_video_progress(video):
-    frame_idx = video.get(cv2.CAP_PROP_POS_FRAMES)
-    sys.stdout.write(str(int(frame_idx)) + " frames\r")
-    sys.stdout.flush()
-
 def move_path(path, folder_from, folder_to):
     return path.replace(folder_from, folder_to, 1)
+
+def replace_ext(file, ext):
+    if not ext.startswith('.'):
+        ext = '.' + ext
+    return os.path.splitext(file)[0] + ext
 
 def create_dirs(path):
     directory = os.path.dirname(path)
@@ -119,27 +118,44 @@ for directory, folders, files in os.walk(args.input_folder):
         for video_path in tqdm(video_paths, desc='videos'):
             process_video(video_path)
 
+def process_image(image_path):
+    pass
 
+def get_properties(video):
+    return {
+        'fps': video.get(cv2.CAP_PROP_FPS),
+        'width': int(video.get(cv2.CAP_PROP_FRAME_WIDTH)),
+        'height': int(video.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+        'frames': int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    }
+
+def process_video(video_path):
+    video = cv2.VideoCapture(video_path)
+    props = get_properties(video)
+
+    if args.draw_pose:
+        pose_path = move_path(video_path, args.input_folder, pose_dir)
+        pose_path = replace_ext(pose_path, args.video_ext)
+        create_dirs(pose_path)
+        video_pose = cv2.VideoWriter(pose_path, FOURCC_CODE, props['fps'], (props['width'], props['height']))
+
+    if args.draw_black_pose:
+        black_pose_path = move_path(input_path, args.input_folder, black_pose_dir)
+        black_pose_path = replace_ext(black_pose_path, args.video_ext)
+        create_dirs(black_pose_path)
+        video_black_pose = cv2.VideoWriter(black_pose_path, FOURCC_CODE, props['fps'], (props['width'], props['height']))
+    
+    coords_path = move_path(input_path, args.input_folder, coords_dir)
+    coords_path, _ext = os.path.splitext(coords_path)
+    create_dirs(os.path.join(coords_path, ""))
 
 for input_path in input_paths:
     video = cv2.VideoCapture(input_path)
     
-    framerate = video.get(cv2.CAP_PROP_FPS)
-    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     
-    pose_path = move_path(input_path, args.input_folder, pose_dir)
-    create_dirs(pose_path)
-    video_pose = cv2.VideoWriter(pose_path, cv2.VideoWriter_fourcc(*args.fourcc_code), framerate, (width, height))
     
-    black_pose_path = move_path(input_path, args.input_folder, black_pose_dir)
-    create_dirs(black_pose_path)
-    video_black_pose = cv2.VideoWriter(black_pose_path, cv2.VideoWriter_fourcc(*args.fourcc_code), framerate, (width, height))
     
-    coords_path = move_path(input_path, args.input_folder, coords_dir)
-    coords_path, _ext = os.path.splitext(coords_path)
-    create_dirs(os.path.join(coords_path, "test"))
+    
     
     frames_remaining, frame = video.read()
     frame_idx = 0
