@@ -20,7 +20,10 @@ COPY . /openpose
 
 WORKDIR /openpose/build
 RUN cmake -DBUILD_PYTHON=ON .. && make -j `nproc`
-WORKDIR /openpose
 
+#move the pyopenpose python library into the python3 package folder so it can be imported.
+RUN cp /openpose/build/python/openpose/pyopenpose.cpython-36m-x86_64-linux-gnu.so /usr/local/lib/python3.6/dist-packages/
+
+WORKDIR /openpose
 CMD ["/bin/bash"]
 
