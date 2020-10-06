@@ -9,4 +9,4 @@ docker run \
     --gpus all \
     --ipc="host" \
     pmorris2012/openpose \
-    python3 /code/process_folder.py --help
+    python3 /code/process_folder.py

@@ -25,6 +25,7 @@ parser.add_argument('--hand_scale_range', type=float, default=0.4, help="OpenPos
 parser.add_argument('--image_ext', default=".png", help="the file extension output images will be written with.")
 parser.add_argument('--video_ext', default=".avi", help="the file extension output videos will be written with. this may need to match the video codec.")
 parser.add_argument('--fourcc_code', default="XVID", help="the codec output videos will be written with (see https://www.fourcc.org/codecs.php for possible codes)")
+parser.add_argument('--include_coord_confidence', dest='include_coord_confidence', action='store_true', help="include confidence score with the x and y keypoint coordinates in the output arrays")
 parser.add_argument('--verbose', dest='verbose', action='store_true', help="show video progress and log each image")
 args = parser.parse_args()
 
@@ -80,8 +81,14 @@ def draw_pose(image, result, modes):
 def rescale_coord_array(array, frame_size):
     rescale_dim = np.argmin(frame_size)
     pixel_offset = (max(frame_size) - min(frame_size)) / 2
-    array[:,:,rescale_dim] += pixel_offset
-    array[:,:,:2] /= max(frame_size)
+
+    found_idxs = array.sum(axis=-1) > 0 #only scale keypoints found by openpose
+    array[found_idxs,rescale_dim] += pixel_offset
+
+    if not args.include_coord_confidence:
+        array = array[:,:,:2]
+    array[:,:,:2] /= max(frame_size) #scale xy coords between [0, 1]
+    array[~found_idxs,:2] = np.nan #replace keypoints not found with NaN
     return array
 
 def rescale_coords(result, modes, frame_size):
@@ -90,6 +97,7 @@ def rescale_coords(result, modes, frame_size):
         array = array_dict[mode](result)
         if len(array.shape) > 0:
             arrays[mode] = rescale_coord_array(array, frame_size)
+            
     return arrays
 
 def create_write_dir(path, from_dir, to_dir, ext):
