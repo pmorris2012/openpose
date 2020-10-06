@@ -132,7 +132,7 @@ def process_video(video_path, total_progress_bar=None):
         
     coords_path = create_write_dir(video_path, args.input_folder, coords_dir, ext='/')
     
-    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path), unit='frame', dynamic_ncols=True, disable=args.verbose)
+    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path), unit='frame', dynamic_ncols=True, disable=(not args.verbose))
     frames_remaining, frame = video.read()
     frame_idx = 0
     while frames_remaining:
@@ -184,10 +184,12 @@ for directory, folders, files in os.walk(args.input_folder):
     image_paths.extend(images)
     video_paths.extend(videos)
     video_lengths.extend(lengths)
+
+    print(F"found {len(images):8} images and {len(videos):8} videos ({sum(lengths):9} video frames) in {directory}")
     
-print(F"found {len(image_paths)} images and {len(video_paths)} videos ({sum(video_lengths)} video frames)")
+print(F"TOTAL: found {len(image_paths)} images and {len(video_paths)} videos ({sum(video_lengths)} video frames)")
     
-for image_path in tqdm(image_paths, desc=F'all images', unit='image', dynamic_ncols=True):
+for image_path in tqdm(image_paths, desc=F'all images', unit='image', dynamic_ncols=True, disable=(len(image_paths)==0)):
     process_image(image_path)
     if args.verbose:
         tqdm.write(F"processed {image_path}")
