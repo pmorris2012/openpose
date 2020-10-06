@@ -4,7 +4,7 @@ docker run \
     -it \
     --rm \
     -v /media/mpcrpaul/data/HMDB51/dataset:/Input \
-    -v /media/mpcrpaul/data/HMDB51/Videos_Pose_Face_Hands:/Output \
+    -v /media/mpcrpaul/data/HMDB51/Videos_Pose:/Output \
     --gpus all \
     --ipc="host" \
     pmorris2012/openpose \
