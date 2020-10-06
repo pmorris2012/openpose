@@ -10,7 +10,7 @@ from drawing import draw_keypoints
 from file_utils import move_path, replace_ext, create_dirs
 from cv_utils import check_image, check_video, get_video_properties
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="scans an folder for images/videos, processes them with OpenPose, and saves the output in a separate folder. For more info on OpenPose parameters, see https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/demo_overview.md#main-flags")
 parser.add_argument('--input_folder', default="/Input", help="the folder to search for images/videos to process")
 parser.add_argument('--output_folder', default="/Output", help="the folder output where Coords/Videos/Images will be saved")
 parser.add_argument('--face', dest='face', action='store_true', help="face points will be saved (and drawn, if drawing flags are set)")
