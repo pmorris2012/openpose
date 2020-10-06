@@ -7,8 +7,8 @@ import argparse
 from tqdm import tqdm
 
 from drawing import draw_keypoints
-from file_utils import create_write_dir
-from cv_utils import find_images_videos, get_video_properties
+from file_utils import move_path, replace_ext, create_dirs
+from cv_utils import check_image, check_video, get_video_properties
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_folder', default="/Input")
@@ -25,6 +25,7 @@ parser.add_argument('--scale_gap', type=float, default=0.25)
 parser.add_argument('--hand_scale_number', type=int, default=1)
 parser.add_argument('--hand_scale_range', type=float, default=0.4)
 parser.add_argument('--fourcc_code', default="XVID")
+parser.add_argument('--verbose', dest='verbose', action='store_true')
 args = parser.parse_args()
 
 FOURCC_CODE = cv2.VideoWriter_fourcc(*args.fourcc_code)
@@ -91,6 +92,12 @@ def rescale_coords(result, modes, frame_size):
             arrays[mode] = rescale_coord_array(array, frame_size)
     return arrays
 
+def create_write_dir(path, from_dir, to_dir, ext):
+    write_path = move_path(path, from_dir, to_dir)
+    write_path = replace_ext(write_path, ext)
+    create_dirs(write_path)
+    return write_path
+
 def process_image(image_path):
     frame = cv2.imread(image_path)
     frame_size = (frame.shape[1], frame.shape[0])
@@ -111,7 +118,7 @@ def process_image(image_path):
     coord_arrays = rescale_coords(result, modes, frame_size)
     np.savez(coords_path, **coord_arrays)
 
-def process_video(video_path):
+def process_video(video_path, total_progress_bar=None):
     video = cv2.VideoCapture(video_path)
     props = get_video_properties(video)
     frame_size = (props['width'], props['height'])
@@ -125,7 +132,7 @@ def process_video(video_path):
         
     coords_path = create_write_dir(video_path, args.input_folder, coords_dir, ext='/')
     
-    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path), unit='frame', dynamic_ncols=True)
+    progress_bar = tqdm(initial=1, total=props['frames'], desc=os.path.basename(video_path), unit='frame', dynamic_ncols=True, disable=args.verbose)
     frames_remaining, frame = video.read()
     frame_idx = 0
     while frames_remaining:
@@ -146,6 +153,8 @@ def process_video(video_path):
         frames_remaining, frame = video.read()
         frame_idx += 1
         progress_bar.update(1)
+        if total_progress_bar is not None:
+            total_progress_bar.update(1)
         
     progress_bar.close()
     video.release()
@@ -154,16 +163,35 @@ def process_video(video_path):
     if args.draw_black_pose:
         video_black_pose.release()
 
-#os.walk recursively goes through all the files in args.input_folder
-for directory, folders, files in os.walk(args.input_folder):
-    print(F"searching {directory}")
-    image_paths, video_paths = find_images_videos(directory, files)
-    print(F"found {len(image_paths)} images and {len(video_paths)} videos")
-    
-    if len(image_paths) > 0:
-        for image_path in tqdm(image_paths, desc=F'folder:{directory} images', unit='image', dynamic_ncols=True):
-            process_image(image_path)
+def find_images_videos(directory, files):
+    images, videos, video_lengths = [], [], []
+    for file in files:
+        file_path = os.path.join(directory, file)
+        if check_image(file_path):
+            images.append(file_path)
+        elif check_video(file_path):
+            videos.append(file_path)
 
-    if len(video_paths) > 0:
-        for video_path in tqdm(video_paths, desc=F'folder:{directory} videos', unit='video', dynamic_ncols=True):
-            process_video(video_path)
+            props = get_video_properties(file_path)
+            video_lengths.append(props['frames'])
+
+    return images, videos, video_lengths
+
+#os.walk recursively goes through all the files in args.input_folder
+image_paths, video_paths, video_lengths = [], [], []
+for directory, folders, files in os.walk(args.input_folder):
+    images, videos, lengths = find_images_videos(directory, files)
+    image_paths.extend(images)
+    video_paths.extend(videos)
+    video_lengths.extend(lengths)
+    
+print(F"found {len(image_paths)} images and {len(video_paths)} videos ({sum(video_lengths)} video frames)")
+    
+for image_path in tqdm(image_paths, desc=F'all images', unit='image', dynamic_ncols=True):
+    process_image(image_path)
+    if args.verbose:
+        tqdm.write(F"processed {image_path}")
+
+progress_bar = tqdm(total=sum(video_lengths), desc=F'all videos', unit='frame', dynamic_ncols=True)
+for video_path in video_paths:
+    process_video(video_path, progress_bar)
