@@ -12,7 +12,7 @@ from cv_utils import check_image, check_video, get_video_properties
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_folder', default="/Input", help="the folder to search for images/videos to process")
-parser.add_argument('--output_folder', default="/Output", "the folder output where Coords/Videos/Images will be saved")
+parser.add_argument('--output_folder', default="/Output", help="the folder output where Coords/Videos/Images will be saved")
 parser.add_argument('--face', dest='face', action='store_true', help="face points will be saved (and drawn, if drawing flags are set)")
 parser.add_argument('--hand', dest='hand', action='store_true', help="hand points will be saved (and drawn, if drawing flags are set)")
 parser.add_argument('--draw_pose', dest='draw_pose', action='store_true', help="pose will be drawn on the original video and saved")
@@ -24,8 +24,8 @@ parser.add_argument('--hand_scale_number', type=int, default=1, help="OpenPose p
 parser.add_argument('--hand_scale_range', type=float, default=0.4, help="OpenPose parameter")
 parser.add_argument('--image_ext', default=".png", help="the file extension output images will be written with.")
 parser.add_argument('--video_ext', default=".avi", help="the file extension output videos will be written with. this may need to match the video codec.")
-parser.add_argument('--fourcc_code', default="XVID" help="the codec output videos will be written with (see https://www.fourcc.org/codecs.php for possible codes)")
-parser.add_argument('--verbose', dest='verbose', action='store_true' help="show video progress and log each image")
+parser.add_argument('--fourcc_code', default="XVID", help="the codec output videos will be written with (see https://www.fourcc.org/codecs.php for possible codes)")
+parser.add_argument('--verbose', dest='verbose', action='store_true', help="show video progress and log each image")
 args = parser.parse_args()
 
 FOURCC_CODE = cv2.VideoWriter_fourcc(*args.fourcc_code)
