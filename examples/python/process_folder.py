@@ -205,3 +205,6 @@ for image_path in tqdm(image_paths, desc=F'all images', unit='image', dynamic_nc
 progress_bar = tqdm(total=sum(video_lengths), desc=F'all videos', unit='frame', dynamic_ncols=True)
 for video_path in video_paths:
     process_video(video_path, progress_bar)
+
+progress_bar.close()
+print("Done.")
