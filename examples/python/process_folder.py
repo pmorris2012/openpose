@@ -95,7 +95,7 @@ def rescale_coords(result, modes, frame_size):
     arrays = {}
     for mode in modes:
         array = array_dict[mode](result)
-        if len(array.shape) > 0:
+        if (len(array.shape) > 0) and (array.shape[0] > 0):
             arrays[mode] = rescale_coord_array(array, frame_size)
             
     return arrays
@@ -124,7 +124,9 @@ def process_image(image_path):
 
     coords_path = create_write_dir(image_path, args.input_folder, coords_dir, ext='.npz')
     coord_arrays = rescale_coords(result, modes, frame_size)
-    np.savez(coords_path, **coord_arrays)
+    
+    if len(coord_arrays) > 0:
+        np.savez(coords_path, **coord_arrays)
 
 def process_video(video_path, total_progress_bar=None):
     video = cv2.VideoCapture(video_path)
@@ -154,9 +156,12 @@ def process_video(video_path, total_progress_bar=None):
             black_pose = draw_pose(black, result, modes)
             video_black_pose.write(black_pose)
 
+            
+        if 
         coords_frame_path = os.path.join(coords_path, str(frame_idx) + ".npz")
         coord_arrays = rescale_coords(result, modes, frame_size)
-        np.savez(coords_frame_path, **coord_arrays)
+        if len(coord_arrays) > 0:
+            np.savez(coords_frame_path, **coord_arrays)
 
         frames_remaining, frame = video.read()
         frame_idx += 1
