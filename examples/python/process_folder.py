@@ -11,22 +11,32 @@ from file_utils import move_path, replace_ext, create_dirs
 from cv_utils import check_image, check_video, get_video_properties
 
 parser = argparse.ArgumentParser(description="scans an folder for images/videos, processes them with OpenPose, and saves the output in a separate folder. For more info on OpenPose parameters, see https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/demo_overview.md#main-flags")
+
+# Options
 parser.add_argument('--input_folder', default="/Input", help="the folder to search for images/videos to process")
 parser.add_argument('--output_folder', default="/Output", help="the folder output where Coords/Videos/Images will be saved")
 parser.add_argument('--face', dest='face', action='store_true', help="face points will be saved (and drawn, if drawing flags are set)")
 parser.add_argument('--hand', dest='hand', action='store_true', help="hand points will be saved (and drawn, if drawing flags are set)")
 parser.add_argument('--draw_pose', dest='draw_pose', action='store_true', help="pose will be drawn on the original video and saved")
 parser.add_argument('--draw_black_pose', dest='draw_black_pose', action='store_true', help="pose will be drawn on a black background and saved")
+
+# Openpose parameters
 parser.add_argument('--net_resolution', default="-1x368", help="OpenPose parameter")
 parser.add_argument('--scale_number', type=int, default=1, help="OpenPose parameter")
 parser.add_argument('--scale_gap', type=float, default=0.25, help="OpenPose parameter")
 parser.add_argument('--hand_scale_number', type=int, default=1, help="OpenPose parameter")
 parser.add_argument('--hand_scale_range', type=float, default=0.4, help="OpenPose parameter")
+
+# Miscellaneous Options
 parser.add_argument('--image_ext', default=".png", help="the file extension output images will be written with.")
 parser.add_argument('--video_ext', default=".avi", help="the file extension output videos will be written with. this may need to match the video codec.")
 parser.add_argument('--fourcc_code', default="XVID", help="the codec output videos will be written with (see https://www.fourcc.org/codecs.php for possible codes)")
 parser.add_argument('--include_coord_confidence', dest='include_coord_confidence', action='store_true', help="include confidence score with the x and y keypoint coordinates in the output arrays")
+parser.add_argument('--compress_coords', dest='compress_coords', action='store_true', help="will save the coordinate files in compressed format to save space.")
+
+# Help/Other
 parser.add_argument('--verbose', dest='verbose', action='store_true', help="show video progress and log each image")
+
 args = parser.parse_args()
 
 FOURCC_CODE = cv2.VideoWriter_fourcc(*args.fourcc_code)
@@ -106,6 +116,10 @@ def create_write_dir(path, from_dir, to_dir, ext):
     create_dirs(write_path)
     return write_path
 
+def save_coord_arrays(path, array_dict, compressed=False):
+    save_function = np.savez_compressed if compressed else np.savez
+    save_function(path, **array_dict)
+
 def process_image(image_path):
     frame = cv2.imread(image_path)
     frame_size = (frame.shape[1], frame.shape[0])
@@ -124,9 +138,8 @@ def process_image(image_path):
 
     coords_path = create_write_dir(image_path, args.input_folder, coords_dir, ext='.npz')
     coord_arrays = rescale_coords(result, modes, frame_size)
-    
     if len(coord_arrays) > 0:
-        np.savez(coords_path, **coord_arrays)
+        save_coord_arrays(coords_path, coord_arrays, compressed=args.compress_coords)
 
 def process_video(video_path, total_progress_bar=None):
     video = cv2.VideoCapture(video_path)
@@ -161,7 +174,7 @@ def process_video(video_path, total_progress_bar=None):
         coords_frame_path = os.path.join(coords_path, str(frame_idx) + ".npz")
         coord_arrays = rescale_coords(result, modes, frame_size)
         if len(coord_arrays) > 0:
-            np.savez(coords_frame_path, **coord_arrays)
+            save_coord_arrays(coords_frame_path, coord_arrays, compressed=args.compress_coords)
 
         frames_remaining, frame = video.read()
         frame_idx += 1
