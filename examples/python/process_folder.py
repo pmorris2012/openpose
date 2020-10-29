@@ -169,8 +169,6 @@ def process_video(video_path, total_progress_bar=None):
             black_pose = draw_pose(black, result, modes)
             video_black_pose.write(black_pose)
 
-            
-        if 
         coords_frame_path = os.path.join(coords_path, str(frame_idx) + ".npz")
         coord_arrays = rescale_coords(result, modes, frame_size)
         if len(coord_arrays) > 0:
